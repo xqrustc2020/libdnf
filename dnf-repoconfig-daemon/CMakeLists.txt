@@ -1,9 +1,10 @@
 set(SERVER_BIN dnf-repoconfig-daemon)
 set(SERVER_SRCS
-    main.cpp
-    repoconf.cpp
     configuration.cpp
+    main.cpp
     logger.cpp
+    repoconf.cpp
+    session.cpp
 )
 
 

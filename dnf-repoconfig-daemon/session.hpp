@@ -16,33 +16,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "logger.hpp"
-#include "session.hpp"
+#ifndef DNF_REPOCONFIG_DAEMON_SESSION_HPP
+#define DNF_REPOCONFIG_DAEMON_SESSION_HPP
 
-#include "../libdnf/log.hpp"
-#include "../libdnf/utils/tinyformat/tinyformat.hpp"
+#include "repoconf.hpp"
 
 #include <sdbus-c++/sdbus-c++.h>
+#include <vector>
 #include <string>
 
 
-int main(int argc, char *argv[])
-{
-    JournalLogger journal_logger;
-    libdnf::Log::setLogger(&journal_logger);
-
-    // Create D-Bus connection to the system bus and requests name on it.
-    const char* serviceName = "org.rpm.dnf.v0.rpm.RepoConf";
-    std::unique_ptr<sdbus::IConnection> connection = NULL;
-    try {
-        connection = sdbus::createSystemBusConnection(serviceName);
-    } catch (const sdbus::Error &e) {
-        journal_logger.error(tfm::format("Fatal error: %s", e.what()));
-        return 1;
+class Session {
+public:
+    Session(sdbus::IConnection &connection);
+    ~Session() {
+        dbus_object->unregister();
     }
+    void open_session(sdbus::MethodCall call);
+    void close_session(sdbus::MethodCall call);
 
-    auto session = Session(*connection);
+private:
+    std::map<std::string, std::unique_ptr<RepoConf>> sessions;
+    sdbus::IConnection &connection;
+    std::unique_ptr<sdbus::IObject> dbus_object;
+    void dbus_register_methods();
+    std::string gen_session_id();
+};
 
-    // Run the I/O event loop on the bus connection.
-    connection->enterEventLoop();
-}
+#endif

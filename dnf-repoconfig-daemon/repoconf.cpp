@@ -18,21 +18,25 @@
 
 #include "configuration.hpp"
 #include "repoconf.hpp"
+#include "../libdnf/log.hpp"
+#include "../libdnf/utils/tinyformat/tinyformat.hpp"
 
 #include <iostream>
 #include <sdbus-c++/sdbus-c++.h>
 #include <string>
 
 
-RepoConf::RepoConf(sdbus::IConnection &connection) : connection(connection)
+RepoConf::RepoConf(sdbus::IConnection &connection, const std::string install_root, const std::string sessionid) : connection(connection),install_root(install_root)
 {
-    dbus_register_methods();
+    dbus_register_methods(sessionid);
 }
 
-void RepoConf::dbus_register_methods()
+void RepoConf::dbus_register_methods(const std::string sessionid)
 {
-    const std::string objectPath = "/org/rpm/dnf/v0/rpm/RepoConf";
+    auto logger(libdnf::Log::getLogger());
+    const std::string objectPath = "/org/rpm/dnf/v0/rpm/RepoConf/" + sessionid;
     const std::string interfaceName = "org.rpm.dnf.v0.rpm.RepoConf";
+    logger->warning(tfm::format("XXX sessionid: %s", sessionid));
 
     dbus_object = sdbus::createObject(connection, objectPath);
     dbus_object->registerMethod(interfaceName, "list", "as", "aa{sv}", [this](sdbus::MethodCall call) -> void {this->list(call);});
