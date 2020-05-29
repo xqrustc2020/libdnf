@@ -20,8 +20,10 @@
 #define DNF_REPOCONFIG_DAEMON_REPOCONF_HPP
 
 #include <sdbus-c++/sdbus-c++.h>
-#include <vector>
+
+#include <chrono>
 #include <string>
+#include <vector>
 
 const std::string REPO_CONF_ERROR = "org.rpm.dnf.v0.rpm.RepoConf.Error";
 
@@ -38,14 +40,19 @@ public:
     void get(sdbus::MethodCall call);
     void enable_disable(sdbus::MethodCall call, const bool enable);
 
+    // numbers of seconds ago last command was performed
+    long int age();
+
 private:
     KeyValueMapList repo_list(const std::vector<std::string> &ids);
     std::vector<std::string> enable_disable_repos(const std::vector<std::string> &ids, const bool enable);
     void dbus_register_methods(const std::string sessionid);
     bool check_authorization(const std::string &actionid, const std::string &sender);
+    void age_reset();
     sdbus::IConnection &connection;
     std::string install_root;
     std::unique_ptr<sdbus::IObject> dbus_object;
+    std::chrono::system_clock::time_point last_called;
 };
 
 #endif

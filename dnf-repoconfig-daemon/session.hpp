@@ -22,25 +22,29 @@
 #include "repoconf.hpp"
 
 #include <sdbus-c++/sdbus-c++.h>
+
+#include <mutex>
 #include <vector>
 #include <string>
 
+class CallBackTimer;
 
 class Session {
 public:
     Session(sdbus::IConnection &connection);
-    ~Session() {
-        dbus_object->unregister();
-    }
+    ~Session();
     void open_session(sdbus::MethodCall call);
     void close_session(sdbus::MethodCall call);
+    void drop_stale_sessions();
 
 private:
     std::map<std::string, std::unique_ptr<RepoConf>> sessions;
+    std::mutex sessions_mutex;
     sdbus::IConnection &connection;
     std::unique_ptr<sdbus::IObject> dbus_object;
     void dbus_register_methods();
     std::string gen_session_id();
+    std::unique_ptr<CallBackTimer> watchdog;
 };
 
 #endif

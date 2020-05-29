@@ -29,6 +29,12 @@
 RepoConf::RepoConf(sdbus::IConnection &connection, const std::string install_root, const std::string sessionid) : connection(connection),install_root(install_root)
 {
     dbus_register_methods(sessionid);
+    age_reset();
+}
+
+void RepoConf::age_reset()
+{
+    last_called = std::chrono::system_clock::now();
 }
 
 void RepoConf::dbus_register_methods(const std::string sessionid)
@@ -102,6 +108,7 @@ KeyValueMapList RepoConf::repo_list(const std::vector<std::string> &ids)
 
 void RepoConf::list(sdbus::MethodCall call)
 {
+    age_reset();
     std::vector<std::string> ids;
     call >> ids;
 
@@ -114,6 +121,7 @@ void RepoConf::list(sdbus::MethodCall call)
 
 void RepoConf::get(sdbus::MethodCall call)
 {
+    age_reset();
     std::string id;
     call >> id;
 
@@ -160,6 +168,7 @@ std::vector<std::string> RepoConf::enable_disable_repos(const std::vector<std::s
 
 void RepoConf::enable_disable(sdbus::MethodCall call, const bool enable)
 {
+    age_reset();
     auto sender = call.getSender();
     auto is_authorized = check_authorization("org.rpm.dnf.v0.rpm.RepoConf.write", sender);
     if (!is_authorized) {
@@ -170,4 +179,9 @@ void RepoConf::enable_disable(sdbus::MethodCall call, const bool enable)
     auto reply = call.createReply();
     reply << enable_disable_repos(ids, enable);
     reply.send();
+}
+
+long int RepoConf::age() {
+    auto now = std::chrono::system_clock::now();
+    return (std::chrono::duration_cast<std::chrono::seconds>(now - last_called)).count();
 }
