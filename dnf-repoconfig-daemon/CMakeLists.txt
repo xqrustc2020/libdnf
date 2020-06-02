@@ -27,3 +27,4 @@ install(TARGETS ${SERVER_BIN} RUNTIME DESTINATION bin)
 
 add_subdirectory(polkit)
 add_subdirectory(dbus)
+#add_subdirectory(example_client)

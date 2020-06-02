@@ -28,16 +28,23 @@ int main(int argc, char *argv[])
 {
     auto connection = sdbus::createSystemBusConnection();
     std::cout << "Client name: " << connection->getUniqueName() << std::endl;
-    const char* destinationName = "org.rpm.dnf.v0.rpm.RepoConf";
-    const char* objectPath = "/org/rpm/dnf/v0/rpm/RepoConf";
-    auto repoconf_proxy = sdbus::createProxy(*connection, destinationName, objectPath);
-    const char* interfaceName = "org.rpm.dnf.v0.rpm.RepoConf";
-    repoconf_proxy->finishRegistration();
+    const char* destination_name = "org.rpm.dnf.v0.rpm.RepoConf";
+    const char* object_path = "/org/rpm/dnf/v0/rpm/RepoConf";
+    auto repoconf_session_proxy = sdbus::createProxy(*connection, destination_name, object_path);
+    const char* session_interface = "org.rpm.dnf.v0.rpm.RepoConfSession";
+    const char* repoconf_interface = "org.rpm.dnf.v0.rpm.RepoConf";
+    repoconf_session_proxy->finishRegistration();
+
+    sdbus::ObjectPath session_object_path;
+    repoconf_session_proxy->callMethod("open_session").onInterface(session_interface).withArguments("/").storeResultsTo(session_object_path);
+
+    auto repoconf_proxy = sdbus::createProxy(*connection, destination_name, session_object_path);
+    repoconf_session_proxy->finishRegistration();
 
     {
         std::vector<std::string> ids = {"fedora", "updates"};
         std::vector<std::map<std::string, sdbus::Variant>> repolist;
-        repoconf_proxy->callMethod("list").onInterface(interfaceName).withArguments(ids).storeResultsTo(repolist);
+        repoconf_proxy->callMethod("list").onInterface(repoconf_interface).withArguments(ids).storeResultsTo(repolist);
         for (auto &repo: repolist) {
             for (auto &item: repo) {
                 std::cout << item.first << ": " << item.second.get<std::string>() << std::endl;
@@ -45,6 +52,8 @@ int main(int argc, char *argv[])
             std::cout << "-----------" << std::endl;
         }
     }
+
+    repoconf_session_proxy->callMethod("close_session").onInterface(session_interface).withArguments(session_object_path);
 
     return 0;
 }

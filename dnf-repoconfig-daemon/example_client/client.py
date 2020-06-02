@@ -20,15 +20,19 @@ import dbus
 
 bus = dbus.SystemBus()
 proxy = bus.get_object('org.rpm.dnf.v0.rpm.RepoConf', '/org/rpm/dnf/v0/rpm/RepoConf')
-iface = dbus.Interface(proxy, dbus_interface='org.rpm.dnf.v0.rpm.RepoConf')
+iface = dbus.Interface(proxy, dbus_interface='org.rpm.dnf.v0.rpm.RepoConfSession')
 
-for repo in iface.list([]):
+session = iface.open_session("/")
+
+proxy_rconf = bus.get_object('org.rpm.dnf.v0.rpm.RepoConf', session)
+iface_rconf = dbus.Interface(proxy_rconf, dbus_interface='org.rpm.dnf.v0.rpm.RepoConf')
+
+for repo in iface_rconf.list([]):
     print(repo['repoid'])
 
+print(iface_rconf.get("fedora"))
 
-print(iface.get("fedora"))
+#print(iface_rconf.disable(["fedora"]))
+#print(iface_rconf.enable(["fedora"]))
 
-#print(iface.get("fedoras"))
-
-print(iface.disable(["fedora"]))
-print(iface.enable(["fedora"]))
+print(iface.close_session(session))
