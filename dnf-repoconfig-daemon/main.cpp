@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    auto session = Session(*connection);
+    auto session = Session(*connection, "/org/rpm/dnf/v1/rpm/RepoConf");
 
     // Run the I/O event loop on the bus connection.
     connection->enterEventLoop();

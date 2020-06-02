@@ -77,10 +77,11 @@ private:
 
 
 
-Session::Session(sdbus::IConnection &connection) : connection(connection), watchdog(new CallBackTimer)
+Session::Session(sdbus::IConnection &connection, std::string object_path) : object_path(object_path), connection(connection)
 {
     dbus_register_methods();
     // start the watch-dog
+    watchdog = std::make_unique<CallBackTimer>();
     watchdog->start(10, std::bind(&Session::drop_stale_sessions, this));
 
 }
@@ -91,12 +92,11 @@ Session::~Session() {
 
 void Session::dbus_register_methods()
 {
-    const std::string objectPath = "/org/rpm/dnf/v1/rpm/RepoConf";
     const std::string interfaceName = "org.rpm.dnf.v1.rpm.RepoConfSession";
 
-    dbus_object = sdbus::createObject(connection, objectPath);
-    dbus_object->registerMethod(interfaceName, "open_session", "s", "s", [this](sdbus::MethodCall call) -> void {this->open_session(call);});
-    dbus_object->registerMethod(interfaceName, "close_session", "s", "b", [this](sdbus::MethodCall call) -> void {this->close_session(call);});
+    dbus_object = sdbus::createObject(connection, object_path);
+    dbus_object->registerMethod(interfaceName, "open_session", "s", "o", [this](sdbus::MethodCall call) -> void {this->open_session(call);});
+    dbus_object->registerMethod(interfaceName, "close_session", "o", "b", [this](sdbus::MethodCall call) -> void {this->close_session(call);});
     dbus_object->finishRegistration();
 }
 
@@ -135,7 +135,7 @@ void Session::open_session(sdbus::MethodCall call)
     call >> install_root;
 
     // generate UUID-like session id
-    const std::string sessionid = gen_session_id();
+    const std::string sessionid = object_path + "/" + gen_session_id();
     // store newly created session
     {
         std::lock_guard<std::mutex> lg(sessions_mutex);
@@ -143,14 +143,14 @@ void Session::open_session(sdbus::MethodCall call)
     }
 
     auto reply = call.createReply();
-    reply << sessionid;
+    reply << sdbus::ObjectPath{sessionid};
     reply.send();
 }
 
 
 void Session::close_session(sdbus::MethodCall call)
 {
-    std::string session_id;
+    sdbus::ObjectPath session_id;
     call >> session_id;
 
     // if the session with given id exists, delete it

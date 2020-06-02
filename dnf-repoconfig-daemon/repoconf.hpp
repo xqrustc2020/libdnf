@@ -32,7 +32,7 @@ using KeyValueMapList = std::vector<KeyValueMap>;
 
 class RepoConf {
 public:
-    RepoConf(sdbus::IConnection &connection, const std::string install_root, const std::string sessionid);
+    RepoConf(sdbus::IConnection &connection, const std::string install_root, const std::string object_path);
     ~RepoConf() {
         dbus_object->unregister();
     }
@@ -46,7 +46,7 @@ public:
 private:
     KeyValueMapList repo_list(const std::vector<std::string> &ids);
     std::vector<std::string> enable_disable_repos(const std::vector<std::string> &ids, const bool enable);
-    void dbus_register_methods(const std::string sessionid);
+    void dbus_register_methods(const std::string object_path);
     bool check_authorization(const std::string &actionid, const std::string &sender);
     void age_reset();
     sdbus::IConnection &connection;

@@ -26,9 +26,9 @@
 #include <string>
 
 
-RepoConf::RepoConf(sdbus::IConnection &connection, const std::string install_root, const std::string sessionid) : connection(connection),install_root(install_root)
+RepoConf::RepoConf(sdbus::IConnection &connection, const std::string install_root, const std::string object_path) : connection(connection),install_root(install_root)
 {
-    dbus_register_methods(sessionid);
+    dbus_register_methods(object_path);
     age_reset();
 }
 
@@ -37,14 +37,11 @@ void RepoConf::age_reset()
     last_called = std::chrono::system_clock::now();
 }
 
-void RepoConf::dbus_register_methods(const std::string sessionid)
+void RepoConf::dbus_register_methods(const std::string object_path)
 {
-    auto logger(libdnf::Log::getLogger());
-    const std::string objectPath = "/org/rpm/dnf/v0/rpm/RepoConf/" + sessionid;
     const std::string interfaceName = "org.rpm.dnf.v0.rpm.RepoConf";
-    logger->warning(tfm::format("XXX sessionid: %s", sessionid));
 
-    dbus_object = sdbus::createObject(connection, objectPath);
+    dbus_object = sdbus::createObject(connection, object_path);
     dbus_object->registerMethod(interfaceName, "list", "as", "aa{sv}", [this](sdbus::MethodCall call) -> void {this->list(call);});
     dbus_object->registerMethod(interfaceName, "get", "s", "a{sv}", [this](sdbus::MethodCall call) -> void {this->get(call);});
     dbus_object->registerMethod(interfaceName, "enable", "as", "as", [this](sdbus::MethodCall call) -> void {this->enable_disable(call, true);});
