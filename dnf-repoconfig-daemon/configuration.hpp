@@ -35,7 +35,8 @@ public:
         std::unique_ptr<libdnf::ConfigRepo> repoconfig;
     };
 
-    Configuration() : cfg_main(new libdnf::ConfigMain) {};
+    Configuration() : cfg_main(new libdnf::ConfigMain), install_root("/") {};
+    Configuration(std::string install_root);
     ~Configuration() = default;
 
     void read_configuration();
@@ -50,11 +51,13 @@ private:
     // repo_config_file_path: parser
     std::map<std::string, std::unique_ptr<libdnf::ConfigParser>> config_parsers;
     std::map<std::string, std::string> substitutions;
+    std::string install_root;
 
     void read_repos(const libdnf::ConfigParser *repo_parser, const std::string &file_path);
     void set_substitutions();
     void read_main_config();
     void read_repo_configs();
+    std::string prepend_install_root(std::string path);
 };
 
 

@@ -76,7 +76,7 @@ bool RepoConf::check_authorization(const std::string &actionid, const std::strin
 
 KeyValueMapList RepoConf::repo_list(const std::vector<std::string> &ids)
 {
-    Configuration cfg;
+    Configuration cfg(install_root);
     cfg.read_configuration();
 
     bool empty_ids = ids.empty();
@@ -136,7 +136,7 @@ void RepoConf::get(sdbus::MethodCall call)
 }
 
 std::vector<std::string> RepoConf::enable_disable_repos(const std::vector<std::string> &ids, const bool enable) {
-    Configuration cfg;
+    Configuration cfg(install_root);
     cfg.read_configuration();
 
     std::vector<std::string> out;

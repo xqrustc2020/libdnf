@@ -28,6 +28,13 @@
 #include <iostream>
 #include <rpm/rpmlib.h>
 
+Configuration::Configuration(std::string install_root) : Configuration()
+{
+    if (!install_root.empty()) {
+        this->install_root = install_root;
+    }
+}
+
 void Configuration::read_configuration()
 {
     set_substitutions();
@@ -58,13 +65,19 @@ void Configuration::set_substitutions()
     }
 }
 
+std::string Configuration::prepend_install_root(std::string path)
+{
+    auto fs_path = std::filesystem::path(path);
+    return (std::filesystem::path(install_root) / fs_path.relative_path()).string();
+}
+
 void Configuration::read_main_config()
 {
     auto logger(libdnf::Log::getLogger());
     // create new main config parser and read the config file
     std::unique_ptr<libdnf::ConfigParser> main_parser(new libdnf::ConfigParser);
     main_parser->setSubstitutions(substitutions);
-    auto main_config_path = cfg_main->config_file_path().getValue();
+    auto main_config_path = prepend_install_root(cfg_main->config_file_path().getValue());
     try {
         main_parser->read(main_config_path);
         const auto & cfgParserData = main_parser->getData();
@@ -94,7 +107,7 @@ void Configuration::read_main_config()
         read_repos(main_parser.get(), main_config_path);
         // store the parser so it can be used for saving the config file later on
         config_parsers[std::move(main_config_path)] = std::move(main_parser);
-    } catch (libdnf::ConfigParser::ParsingError & e) {
+    } catch (const std::exception & e) {
         logger->warning(tfm::format("Error parsing config file %s: %s", main_config_path, e.what()));
     }
 }
@@ -146,7 +159,7 @@ void Configuration::read_repo_configs()
         // use canonical to resolve symlinks in reposDir
         std::string pattern;
         try {
-            pattern = std::filesystem::canonical(reposDir).string() + "/*.repo";
+            pattern = std::filesystem::canonical(prepend_install_root(reposDir)).string() + "/*.repo";
         }
         catch (std::filesystem::filesystem_error & e) {
             logger->debug(tfm::format("Error reading repository configuration directory %s: %s", reposDir, e.what()));
