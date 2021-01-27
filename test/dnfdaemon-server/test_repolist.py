@@ -48,7 +48,7 @@ class RepoTest(unittest.TestCase):
     def test_list_repos(self):
         # get list of all repositories
         self.assertEqual(
-            self.iface_repo.list({}),
+            self.iface_repo.list({"repo_attrs": ["name", "enabled"]}),
             dbus.Array([
                 dbus.Dictionary({
                     dbus.String('name'): dbus.String('Repository repo-a', variant_level=1),
@@ -68,7 +68,8 @@ class RepoTest(unittest.TestCase):
     def test_list_repos_spec(self):
         # get list of specified repositories
         self.assertEqual(
-            self.iface_repo.list({"patterns": ['repo-a']}),
+                self.iface_repo.list(
+                    {"repo_attrs": ["name", "enabled"], "patterns": ['repo-a']}),
             dbus.Array([
                 dbus.Dictionary({
                     dbus.String('name'): dbus.String('Repository repo-a', variant_level=1),
